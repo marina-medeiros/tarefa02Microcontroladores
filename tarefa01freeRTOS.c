@@ -5,6 +5,9 @@
 #include "joystick.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
+#include "include/wifi_conn.h"      // Funções personalizadas de conexão WiFi
+#include "include/mqtt_comm.h"      // Funções personalizadas para MQTT
+#include "include/xor_cipher.h"     // Funções de cifra XOR
 
 const uint led_pin_red = 12;
 
@@ -76,6 +79,35 @@ void vJoystickTask(){
         last_direction = direction;
     }
     
+}
+
+void wifiCommunication(){
+    // Conecta à rede WiFi
+    // Parâmetros: Nome da rede (SSID) e senha
+    connect_to_wifi("SSID da rede", "Senha da rede");
+
+    // Configura o cliente MQTT
+    // Parâmetros: ID do cliente, IP do broker, usuário, senha
+    mqtt_setup("bitdog1", "IP do broker", "aluno", "senha123");
+
+    // Mensagem original a ser enviada
+    const char *mensagem = "26.5";
+    // Buffer para mensagem criptografada (16 bytes)
+    uint8_t criptografada[16];
+    // Criptografa a mensagem usando XOR com chave 42
+    xor_encrypt((uint8_t *)mensagem, criptografada, strlen(mensagem), 42);
+
+    // Loop principal do programa
+    while (true) {
+        // Publica a mensagem original (não criptografada)
+        mqtt_comm_publish("escola/sala1/temperatura", mensagem, strlen(mensagem));
+        
+        // Alternativa: Publica a mensagem criptografada (atualmente comentada)
+        // mqtt_comm_publish("escola/sala1/temperatura", criptografada, strlen(mensagem));
+        
+        // Aguarda 5 segundos antes da próxima publicação
+        sleep_ms(5000);
+    }
 }
 
 int main(){
